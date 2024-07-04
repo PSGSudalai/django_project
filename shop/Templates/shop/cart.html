@@ -14,19 +14,39 @@
                     <tr>
                         <th>Image</th>
                         <th>Product Name</th>
+                        <th>Unit</th>
                         <th>Quantity</th>
+                        <th>Amount</th>
                         <th>Remove</th>
                     </tr>
                 {% for item in cart %}
                  <tr>
-                    <td><img src="" alt=""></td>
+                    <td><img src="{{item.product.product_image.url}}" height="75px;" alt=""></td>
                     <td>{{item.product.name}}</td>
+                    <td>{{item.product.selling_price | stringformat:'d'}}</td>
                     <td>{{item.product_qty}}</td>
-                    <td><button class="btn btn-danger"><i class="fa fa-trash"></i> Remove</button></td>
+                    <td class="amt">{{item.total_cost | stringformat:'d'}}</td>
+                    <td><a href="{% url 'remove_cart ' item.id %}" onclick="return confirm('Are you sure? to remove')"><button class="btn btn-danger"><i class="fa fa-trash"></i> Remove</a></button></td>
                  </tr>
                 {% endfor %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td><b>Total Amount </b></td>
+                    <td id="net" colspan="5">0</td>
+                </tr>
             </table>
             </div>
         </div>
     </section>
+    <script>
+        const nodes =document.querySelectorAll('.amt');
+        const arr =Array.from(nodes);
+        const res = arr.reduce((acc,curr) => {
+            return acc += Number(curr.textContent)
+
+        },0);
+        document.getElementById("net").innerHTML ="Rs : "+res;
+    </script>
 {% endblock content %}
