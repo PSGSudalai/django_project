@@ -3,7 +3,7 @@ import json
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from shop.form import CustomUserForm
-from .models import Cart, Category,Product
+from .models import Cart, Category,Product,Favourite
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
 
@@ -19,17 +19,17 @@ def login_page(request):
         if user is not None:
             login(request,user)
             messages.success(request,"Logged in Successfully")
-            return redirect('/')
+            return redirect('home')
         else:
             messages.error(request,"Invalid User Name or Password")
-            return redirect('/login')
+            return redirect('login')
     return render(request,"shop/login.html")
 
 def logout_page(request):
     if request.user.is_authenticated:
         logout(request)
         messages.success(request,"Logout successfully")
-    return redirect('/')
+    return redirect('login')
 
 def register(request):
     form=CustomUserForm()
@@ -38,8 +38,26 @@ def register(request):
         if form.is_valid():
             form.save()
             messages.success(request,"Registration Success you can Login now..!")
-            return redirect('login/')
+            return redirect('login')
     return render(request,"shop/register.html",{'form':form})
+
+def FavView(request):
+    if request.user.is_authenticated:
+      fav=Favourite.objects.filter(user=request.user)
+      return render(request,"shop/favourite.html",{"fav":fav})
+    else:
+      return redirect("/")  
+
+def remove_fav(request,fid):
+    favitem=Favourite.objects.get(id=fid)
+    favitem.delete()
+    return redirect("/favourite")
+
+
+def remove_cart(request,cid):
+    cartitem=Cart.objects.get(id=cid)
+    cartitem.delete()
+    return redirect("/cart")
 
 def add_to_cart(request):
     if request.headers.get('x-requested-with')=='XMLHttpRequest':
@@ -57,6 +75,24 @@ def add_to_cart(request):
                         return JsonResponse({'status':'Product Added to Cart'},status=200)
                     else:
                         return JsonResponse({'status':'Product Stock Not Avaliable'},status=200)
+        else:
+            return JsonResponse({'status' :'Login to Add Cart'}, status=200)
+    else:
+        return JsonResponse({'status':'Invalid Access'},status=200)
+    
+
+def favourite(request):
+    if request.headers.get('x-requested-with')=='XMLHttpRequest':
+        if request.user.is_authenticated:
+            data=json.load(request)
+            product_id =data['pid']
+            product_status=Product.objects.get(id=product_id)
+            if product_status:
+                if Favourite.objects.filter(user=request.user.id,product_id=product_id):
+                    return JsonResponse({'status' :'Product Already in Favourite'},status=200)
+                else:
+                    Favourite.objects.create(user=request.user,product_id=product_id)
+                    return JsonResponse({'status' :'Product Added to Favourite'}, status=200)
         else:
             return JsonResponse({'status' :'Login to Add Cart'}, status=200)
     else:
